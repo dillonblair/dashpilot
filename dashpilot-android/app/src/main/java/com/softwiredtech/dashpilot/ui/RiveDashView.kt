@@ -14,12 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
+import app.rive.ExperimentalDeferredRendering
 import app.rive.Fit
 import app.rive.Result
 import app.rive.Rive
 import app.rive.RiveFile
 import app.rive.RiveFileSource
 import app.rive.ViewModelSource
+import app.rive.rememberDeferredRiveWorker
 import app.rive.rememberRiveFile
 import app.rive.rememberRiveWorkerOrNull
 import app.rive.rememberViewModelInstance
@@ -31,12 +33,14 @@ import kotlinx.coroutines.flow.Flow
 private const val DASH_VIEW_MODEL = "DashViewModel"
 private const val ARTBOARD_HEIGHT = 1080f
 
+@OptIn(ExperimentalDeferredRendering::class)
 @Composable
 fun RiveDashView(
     assetName: String,
     dashStateFlow: Flow<DashState>,
     onError: ((message: String) -> Unit),
-    fileUri: String? = null
+    fileUri: String? = null,
+    useGpuCanvas: Boolean = false
 ) {
     val systemDarkMode = isSystemInDarkTheme()
     BoxWithConstraints(
@@ -46,8 +50,10 @@ fun RiveDashView(
     ) {
         val fit = Fit.Layout(constraints.maxHeight / ARTBOARD_HEIGHT)
         val context = LocalContext.current
+        // GPU Canvas content (WGSL shaders over a script-drawn canvas) only renders on a deferred
+        // worker. It is opt-in from Developer settings; every other case keeps the standard worker.
         val errorState = remember { mutableStateOf<Throwable?>(null) }
-        val riveWorker = rememberRiveWorkerOrNull(errorState)
+        val riveWorker = if (useGpuCanvas) rememberDeferredRiveWorker() else rememberRiveWorkerOrNull(errorState)
         if (riveWorker == null) {
             onError(errorState.value.toString())
             return@BoxWithConstraints

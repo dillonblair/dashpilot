@@ -47,6 +47,7 @@ import com.softwiredtech.dashpilot.datamodel.dash.DashState
 import com.softwiredtech.dashpilot.datamodel.dash.DashboardType
 import com.softwiredtech.dashpilot.datamodel.dash.availableDashboards
 import com.softwiredtech.dashpilot.datamodel.dash.dashboardById
+import com.softwiredtech.dashpilot.datamodel.dash.isDevRiveGpuCanvasEnabled
 import com.softwiredtech.dashpilot.datamodel.dash.saveSelectedDashboard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -167,11 +168,14 @@ fun DashboardScreen(
                     )
                 }
                 "rive", DEV_RIVE_TYPE -> {
+                    val context = LocalContext.current
+                    val useGpuCanvas = remember { isDevRiveGpuCanvasEnabled(context) }
                     RiveDashView(
                         assetName = if (currentType == DEV_RIVE_TYPE) "" else currentUrl,
                         dashStateFlow = dashStateFlow,
                         onError = { message -> Log.d("Rive", message) },
-                        fileUri = if (currentType == DEV_RIVE_TYPE) currentUrl else null
+                        fileUri = if (currentType == DEV_RIVE_TYPE) currentUrl else null,
+                        useGpuCanvas = useGpuCanvas
                     )
                 }
             }
